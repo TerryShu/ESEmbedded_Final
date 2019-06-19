@@ -5,7 +5,9 @@
 #include "usart.h"
 #include "asm_func.h"
 
-#define TASK_NUM 3
+#define MAX_INT    ((((int)(-1))<<1))
+
+#define TASK_NUM 4
 #define PSTACK_SIZE_WORDS 1024 //user stack size = 4 kB
 
 static uint32_t *psp_array[TASK_NUM];
@@ -43,6 +45,32 @@ void task2(void)
 	blink(LED_ORANGE); //should not return
 }
 
+
+
+void task3(void)
+{
+	printf("[Task3]\r\n\n");
+	int t0 = 0 ;
+	int t1 = 1 ;
+	printf("fib : %d  %d  " ,  t0 , t1 ) ;
+	while(1) {		
+		for(int i = 0 ; i<50000 ; i++ ) ;
+		int sum = t0 + t1 ;
+		if (t0 < 0 ||  t1 < 0  || sum < 0 ) {
+			sum = 0 ;
+			t0 = 0 ;
+			t1 = 1 ;
+			printf("\r\n\n ===restart=== : \r\n\nfib : %d  %d  " ,  t0 , t1 ) ;
+		}
+		else {
+			printf("%d  " , sum ) ;
+			t0 = t1 ;
+			t1 = sum ;
+		}
+
+	} 
+}
+
 int main(void)
 {
 	init_usart1();
@@ -53,6 +81,7 @@ int main(void)
 	init_task(0, (uint32_t *)task0, (user_stacks[0]+1024));
 	init_task(1, (uint32_t *)task1, (user_stacks[1]+1024));
 	init_task(2, (uint32_t *)task2, (user_stacks[2]+1024));
+	init_task(3, (uint32_t *)task3, (user_stacks[3]+1024));
 
 	printf("[Kernel] Start in privileged thread mode.\r\n\n");
 
@@ -85,6 +114,7 @@ void setup_systick(uint32_t ticks)
 uint32_t *sw_task(uint32_t *psp)
 {
 	static unsigned int curr_task_id = 0;
+	// printf("[SW_TASK] now task : %d \r\n" , curr_task_id ) ;
 
 	psp_array[curr_task_id] = psp; //save current psp
 
